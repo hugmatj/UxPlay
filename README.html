@@ -46,7 +46,8 @@ alt="Current Packaging status" /></a>.</p>
 <ul>
 <li><p>Install uxplay on Debian-based Linux systems with
 “<code>sudo apt install uxplay</code>”; on FreeBSD with
-“<code>sudo pkg install uxplay</code>”.</p></li>
+“<code>sudo pkg install uxplay</code>”. Also available on Arch-based
+systems through AUR.</p></li>
 <li><p>On Linux and *BSD the mDNS/DNS-SD (Bonjour/ZeroConf) local
 network services needed by UxPlay are usually provided by Avahi:
 <strong>if there is a firewall on the server that will host UxPlay, make
@@ -54,7 +55,9 @@ sure the default network port for mDNS queries (UDP 5353) is
 open</strong>. (Uxplay can work without this port by using only the
 host’s loopback interface, but its visibility to clients will be
 degraded.) See the <a href="#troubleshooting">Troubleshooting</a>
-section below for more details.</p></li>
+section below for more details. (With a firewall, you also need to open
+ports for UxPlay, and use the <code>-p &lt;n&gt;</code> option; see
+<code>man uxplay</code> or <code>uxplay -h</code>.)</p></li>
 <li><p>Even if you install your distribution’s pre-compiled uxplay
 binary package, you may need to read the instructions below for <a
 href="#running-uxplay">running UxPlay</a> to see which of your
@@ -62,7 +65,7 @@ distribution’s <strong>GStreamer plugin packages</strong> you should
 also install.</p></li>
 <li><p>For Raspberry Pi (tested on RPi 4 model B, reported to work on
 RPi 3 model B+), only Raspberry Pi OS, plus the Debian and Manjaro
-ARM-RPi4 Images made available through the Raspberry Pi Imager, are
+ARM-RPi4 images made available through the Raspberry Pi Imager, are
 known to provide the (out-of-mainline-kernel) kernel-module
 <strong>bcm2835-codec.ko</strong> <a
 href="https://github.com/raspberrypi/linux/tree/rpi-5.15.y/drivers/staging/vc04_services">maintained
@@ -72,8 +75,8 @@ by the Broadcom GPU on the Pi, accessed using the GStreamer Video4Linux
 needs a <a
 href="https://github.com/FDH2/UxPlay/wiki/Gstreamer-Video4Linux2-plugin-patches">patch</a>
 forGStreamer &lt; 1.22.</p></li>
-<li><p>To (easily) compile UxPlay from source, see the section <a
-href="#getting-uxplay">Getting UxPlay</a>.</p></li>
+<li><p>To (easily) compile the latest UxPlay from source, see the
+section <a href="#getting-uxplay">Getting UxPlay</a>.</p></li>
 </ul>
 <h1 id="detailed-description-of-uxplay">Detailed description of
 UxPlay</h1>
@@ -512,13 +515,15 @@ it, but compiled to use X11).</li>
 </ul>
 <p><strong>For the “official” release</strong>: install both the macOS
 runtime and development installer packages. Assuming that the latest
-release is 1.20.5. install
+release is 1.20.5 install
 <code>gstreamer-1.0-1.20.5-universal.pkg</code> and
-<code>gstreamer-1.0-devel-1.20.5-universal.pkg</code>. (If you have an
-Intel-architecture Mac, and have problems with the “universal” packages,
-you can also use <code>gstreamer-1.0-1.18.6-x86_64.pkg</code> and
-<code>gstreamer-1.0-devel-1.18.6-x86_64.pkg</code>.) Click on them to
+<code>gstreamer-1.0-devel-1.20.5-universal.pkg</code>. Click on them to
 install (they install to /Library/FrameWorks/GStreamer.framework).</p>
+<ul>
+<li><strong>ADDED 2023-01-25: v1.22.0 has just been released, but these
+binaries seem to have problems, perhaps only on older macOS releases;
+use v1.20.5 if they dont work for you.</strong></li>
+</ul>
 <p><strong>For Homebrew</strong>: pkgconfig is needed (“brew install
 pkgconfig”). Then “brew install gst-plugins-base gst-plugins-good
 gst-plugins-bad gst-libav”. This appears to be functionally equivalent
@@ -1028,6 +1033,31 @@ when the client sends the “Stop Mirroring” signal, try the no-close
 option “-nc” that leaves the video window open.</p>
 <h3 id="gstreamer-issues-missing-plugins-etc.">4. GStreamer issues
 (missing plugins, etc.):</h3>
+<p>If UxPlay fails to start, with a message that a required GStreamer
+plugin (such as “libav”) was not found, first check with the GStreamer
+tool gst-inspect-1.0 to see what GStreamer knows is available. (You may
+need to install some additional GStreamer “tools” package to get
+gst-inspect-1.0). For, <em>e.g.</em> a libav problem, check with
+“<code>gst-inspect-1.0 libav</code>”. If it is not shown as available to
+GStreamer, but your package manager shows the relevant package as
+installed (as one user found), try entirely removing and reinstalling
+the package.</p>
+<p>If it fails to start with an error like
+‘<code>no element "avdec_aac"</code>’ this is because even though
+gstreamer-libav is installed. it is incomplete because some plugins are
+missing: “<code>gst-inspect-1.0 | grep avdec_aac</code>” will show if
+avdec_aac is available. Some distributions (RedHat, SUSE, etc) provide
+incomplete versions of libav because of patent issues with codecs used
+by certain plugins. In those cases there will be some “extra package”
+provider like <a href="https://rpmfusion.org">RPM fusion</a> (RedHat) or
+<a href="http://packman.links2linux.org/">packman</a> (SUSE) where you
+can get complete packages (your distribution will usually provide
+instructions for this). The packages needed may be “libav*” or “ffmpeg*”
+packages: the GStreamer libav plugin package does not contain any codecs
+itself, it just provides a way for GStreamer to use ffmpeg/libav codec
+libraries which must be installed separately. For similar reasons,
+distributions may ship incomplete packages of GStreamer “plugins-bad”,
+which is where “license-problematical” plugins go.</p>
 <p>To troubleshoot GStreamer execute “export GST_DEBUG=2” to set the
 GStreamer debug-level environment-variable in the terminal where you
 will run uxplay, so that you see warning and error messages; see <a
